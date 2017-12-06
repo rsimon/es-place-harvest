@@ -4,16 +4,22 @@ require "uri"
 
 PAGE_SIZE = 200
 
+def write_one(place)
+  # TODO geometry, identifier, match uris, names
+  record = {
+    title: place["title"],
+    # geometry: place["representative_geometry"]
+    identifiers: place["is_conflation_of"].flat_map { |r| r["identifiers"] }
+  }
+  # TODO write to file
+  puts record
+end
+
 def parse_response(response)
   if response.code == "200"
     result = JSON.parse(response.body)
     scroll_id = result["_scroll_id"]
-    result["hits"]["hits"].each do |hit|
-      # TODO title, geometry, identifier, match uris, names
-      # TODO write to file
-      source = hit["_source"]
-      puts source["title"]
-    end
+    result["hits"]["hits"].each { |hit| write_one(hit["_source"]) }
 
     if result["hits"]["hits"].length >= PAGE_SIZE
       return scroll_id
