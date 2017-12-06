@@ -1,21 +1,12 @@
-curl "http://localhost:9200/peripleo/_search?pretty&size=1&q=item_type:PLACE&scroll=1m"
+# Peripleo ElasticSearch Place Harvest Script
 
----
+A simple Ruby script to harvest all the places from the Peripleo ElasticSearch index, and
+generate a single (big) GeoJSON FeatureCollection.
 
-curl -XGET 'localhost:9200/twitter/tweet/_search?scroll=1m' -d '
-{
-    "query": {
-        "match" : {
-            "title" : "elasticsearch"
-        }
-    }
-}
-'
-The result from the above request includes a _scroll_id, which should be passed to the scroll API in order to retrieve the next batch of results.
+__Work in progress!__
 
-curl -XGET  'localhost:9200/_search/scroll'  -d'
-{
-    "scroll" : "1m", 
-    "scroll_id" : "c2Nhbjs2OzM0NDg1ODpzRlBLc0FXNlNyNm5JWUc1" 
-}
-'
+## Usage
+
+1. make sure the ElasticSearch index is running
+2. run `ruby harvest.rb`
+3. wait
