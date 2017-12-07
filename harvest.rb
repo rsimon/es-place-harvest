@@ -8,8 +8,8 @@ def write_one(place)
   # TODO geometry, identifier, match uris, names
   record = {
     title: place["title"],
-    # geometry: place["representative_geometry"]
-    identifiers: place["is_conflation_of"].flat_map { |r| r["identifiers"] }
+    identifiers: place["is_conflation_of"].flat_map { |r| r["identifiers"] },
+    geometry: place["representative_geometry"]
   }
   # TODO write to file
   puts record
