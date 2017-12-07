@@ -64,6 +64,9 @@ The desired output format is a single FeatureCollection with Feature objects suc
 
 ## Example ElasticSearch Record
 
+Just for my own info/reference - the source format in ElasticSearch. (See also
+[this](https://github.com/pelagios/peripleo2/blob/master/conf/es-mappings/01_item.json))
+
 ```json
 {  
    "doc_id":"45ed8835-80b6-4281-adf0-03244eefb441",
