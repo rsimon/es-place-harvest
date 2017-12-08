@@ -48,8 +48,7 @@ def write_one(place)
 
   # TODO external_links
 
-  # TODO write to file
-  puts record.to_json
+  open('data/places.json', 'a') { |f| f.puts record.to_json }
 end
 
 def parse_response(response)
