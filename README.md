@@ -28,6 +28,7 @@ The desired output format is a single FeatureCollection with Feature objects suc
     "to_year": 640,
     "peripleo_view": "http://peripleo.pelagios.org/ui#selected=http%3A%2F%2Fsws.geonames.org%2F2634739"
   },
+  "title": "Warrington",
   "identifiers": [ "http://sws.geonames.org/2634739" ],
   "temporal_bounds": {"from":"-0750-01-01", "to":"0640-01-01"},
   "names":[  

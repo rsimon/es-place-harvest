@@ -5,14 +5,51 @@ require "uri"
 PAGE_SIZE = 200
 
 def write_one(place)
+
+  # Shorthand
+  def flat_map(place, key)
+    place["is_conflation_of"].flat_map { |r| r[key] }.compact
+  end
+
+  def addIfDefined(prop, key, record)
+    if not prop == nil
+      record[key] = prop
+    end
+  end
+
   # TODO geometry, identifier, match uris, names
+  identifiers  = flat_map(place, "identifiers")
+  names        = flat_map(place, "names")
+  descriptions = flat_map(place, "descriptions")
+  depictions   = flat_map(place, "depictions")
+
+  temp_bounds = place["temporal_bounds"]
+
   record = {
+    type: "Feature",
+    # geometry: place["representative_geometry"],
+    properties: {
+      title: place["title"]
+      # TODO from_year
+      # TODO to_year
+      # TODO peripleo_view
+    },
     title: place["title"],
-    identifiers: place["is_conflation_of"].flat_map { |r| r["identifiers"] },
-    geometry: place["representative_geometry"]
+    identifiers: identifiers
   }
+
+  addIfDefined(temp_bounds,  :temporal_bounds, record)
+  addIfDefined(names,        :names,           record)
+  addIfDefined(descriptions, :descriptions,    record)
+
+  if depictions.length > 0
+    record[:depictions] = depictions.map { |d| d.url }
+  end
+
+  # TODO external_links
+
   # TODO write to file
-  puts record
+  puts record.to_json
 end
 
 def parse_response(response)
