@@ -1,8 +1,10 @@
+require "date"
 require "json"
 require "net/http"
 require "uri"
 
 PAGE_SIZE = 200
+OUT_FILE  = "data/places.json"
 
 def write_one(place)
 
@@ -17,22 +19,23 @@ def write_one(place)
     end
   end
 
-  # TODO geometry, identifier, match uris, names
+  # TODO don't write places that are GeoNames only
+
   identifiers  = flat_map(place, "identifiers")
   names        = flat_map(place, "names")
   descriptions = flat_map(place, "descriptions")
   depictions   = flat_map(place, "depictions")
 
   temp_bounds = place["temporal_bounds"]
+  from_year = Date.parse(temp_bounds["from"]).year unless temp_bounds == nil
+  to_year = Date.parse(temp_bounds["to"]).year unless temp_bounds == nil
 
   record = {
     type: "Feature",
-    # geometry: place["representative_geometry"],
+    geometry: place["representative_geometry"],
     properties: {
-      title: place["title"]
-      # TODO from_year
-      # TODO to_year
-      # TODO peripleo_view
+      title: place["title"],
+      peripleo_view: "http://peripleo.pelagios.org/ui#selected=#{URI.encode(identifiers.first)}"
     },
     title: place["title"],
     identifiers: identifiers
@@ -42,13 +45,19 @@ def write_one(place)
   addIfDefined(names,        :names,           record)
   addIfDefined(descriptions, :descriptions,    record)
 
+  addIfDefined(from_year,   :from_year, record[:properties])
+  addIfDefined(to_year,     :to_year,   record[:properties])
+
   if depictions.length > 0
     record[:depictions] = depictions.map { |d| d.url }
   end
 
   # TODO external_links
 
-  open('data/places.json', 'a') { |f| f.puts record.to_json }
+  # TODO don't write records with geometry == nil?
+
+  # TODO don't append comma for last record
+  open(OUT_FILE, 'a') { |f| f.puts "#{record.to_json}," }
 end
 
 def parse_response(response)
@@ -80,10 +89,32 @@ def fetch_next(id)
   parse_response(http.request(request))
 end
 
+def init_file
+  File.delete(OUT_FILE) if File.exist?(OUT_FILE)
+  open(OUT_FILE, 'a') do |f|
+    f.puts '{ "type": "FeatureCollection",'
+    f.puts '  "features": ['
+  end
+end
+
+def close_file
+  open(OUT_FILE, 'a') do |f|
+    f.puts '  ]'
+    f.puts '}'
+  end
+end
+
+###
+# Scrolls through ElasticSearch place items and writes a GeoJSON FeatureCollection as output
+###
+init_file()
+
 scroll_id = fetch_inital()
 
 while not scroll_id.to_s.empty? do
   scroll_id = fetch_next(scroll_id)
 end
+
+close_file()
 
 puts 'Done.'
