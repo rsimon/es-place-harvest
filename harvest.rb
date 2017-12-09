@@ -6,7 +6,9 @@ require "uri"
 PAGE_SIZE = 200
 OUT_FILE  = "data/places.json"
 
-def write_one(place)
+# TODO allow for a MAX_NUM_RECORDS parameter
+
+def write_one(place, is_last)
 
   # Shorthand
   def flat_map(place, key)
@@ -54,19 +56,24 @@ def write_one(place)
 
   # TODO external_links
 
-  # TODO don't write records with geometry == nil?
-
-  # TODO don't append comma for last record
-  open(OUT_FILE, 'a') { |f| f.puts "#{record.to_json}," }
+  if is_last
+    open(OUT_FILE, 'a') { |f| f.puts record.to_json }
+  else
+    open(OUT_FILE, 'a') { |f| f.puts "#{record.to_json}," }
+  end
 end
 
 def parse_response(response)
   if response.code == "200"
     result = JSON.parse(response.body)
     scroll_id = result["_scroll_id"]
+
+    is_last_page = result["hits"]["hits"].length < PAGE_SIZE
+
+    # TODO forward is_last info
     result["hits"]["hits"].each { |hit| write_one(hit["_source"]) }
 
-    if result["hits"]["hits"].length >= PAGE_SIZE
+    if not is_last_page
       return scroll_id
     end
   else
