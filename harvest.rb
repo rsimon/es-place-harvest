@@ -1,16 +1,15 @@
+PAGE_SIZE  = 200
+OUT_FILE   = "data/places.json"
+
+# TODO MAX_NUM_RECORDS parameter
+
 require "date"
 require "json"
 require "net/http"
 require "uri"
 
-PAGE_SIZE = 200
-OUT_FILE  = "data/places.json"
-
-# TODO allow for a MAX_NUM_RECORDS parameter
-
 def write_one(place, is_last)
 
-  # Shorthand
   def flat_map(place, key)
     place["is_conflation_of"].flat_map { |r| r[key] }.compact
   end
@@ -28,9 +27,9 @@ def write_one(place, is_last)
   descriptions = flat_map(place, "descriptions")
   depictions   = flat_map(place, "depictions")
 
-  temp_bounds = place["temporal_bounds"]
-  from_year = Date.parse(temp_bounds["from"]).year unless temp_bounds == nil
-  to_year = Date.parse(temp_bounds["to"]).year unless temp_bounds == nil
+  temp_bounds  = place["temporal_bounds"]
+  from_year    = Date.parse(temp_bounds["from"]).year unless temp_bounds == nil
+  to_year      = Date.parse(temp_bounds["to"]).year unless temp_bounds == nil
 
   record = {
     type: "Feature",
@@ -57,9 +56,9 @@ def write_one(place, is_last)
   # TODO external_links
 
   if is_last
-    open(OUT_FILE, 'a') { |f| f.puts record.to_json }
+    open(OUT_FILE, 'a') { |f| f.puts "    #{record.to_json}" }
   else
-    open(OUT_FILE, 'a') { |f| f.puts "#{record.to_json}," }
+    open(OUT_FILE, 'a') { |f| f.puts "    #{record.to_json}," }
   end
 end
 
@@ -67,14 +66,16 @@ def parse_response(response)
   if response.code == "200"
     result = JSON.parse(response.body)
     scroll_id = result["_scroll_id"]
+    hits = result["hits"]["hits"]
+    is_last_page = hits.length < PAGE_SIZE
 
-    is_last_page = result["hits"]["hits"].length < PAGE_SIZE
-
-    # TODO forward is_last info
-    result["hits"]["hits"].each { |hit| write_one(hit["_source"]) }
+    hits.each_with_index do |hit, idx|
+      is_last = is_last_page && (idx == hits.length - 1)
+      write_one(hit["_source"], is_last)
+    end
 
     if not is_last_page
-      return scroll_id
+      scroll_id
     end
   else
     puts "-- ERROR --"
@@ -96,32 +97,33 @@ def fetch_next(id)
   parse_response(http.request(request))
 end
 
-def init_file
-  File.delete(OUT_FILE) if File.exist?(OUT_FILE)
-  open(OUT_FILE, 'a') do |f|
-    f.puts '{ "type": "FeatureCollection",'
-    f.puts '  "features": ['
-  end
-end
-
-def close_file
-  open(OUT_FILE, 'a') do |f|
-    f.puts '  ]'
-    f.puts '}'
-  end
-end
-
-###
 # Scrolls through ElasticSearch place items and writes a GeoJSON FeatureCollection as output
-###
-init_file()
+def run!
 
-scroll_id = fetch_inital()
+  def init_file
+    File.delete(OUT_FILE) if File.exist?(OUT_FILE)
+    open(OUT_FILE, 'a') do |f|
+      f.puts '{ "type": "FeatureCollection",'
+      f.puts '  "features": ['
+    end
+  end
 
-while not scroll_id.to_s.empty? do
-  scroll_id = fetch_next(scroll_id)
+  def close_file
+    open(OUT_FILE, 'a') do |f|
+      f.puts '  ]'
+      f.puts '}'
+    end
+  end
+
+  init_file()
+  scroll_id = fetch_inital()
+
+  while not scroll_id.to_s.empty? do
+    scroll_id = fetch_next(scroll_id)
+  end
+
+  close_file()
+  puts 'Done.'
 end
 
-close_file()
-
-puts 'Done.'
+run! if __FILE__==$0
