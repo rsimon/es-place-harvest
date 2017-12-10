@@ -1,12 +1,18 @@
-PAGE_SIZE  = 200
-OUT_FILE   = "data/places.json"
+# Page size used for ElasticSearch scrolling
+PAGE_SIZE   = 200
 
-# TODO MAX_NUM_RECORDS parameter
+# Output file to write to
+OUT_FILE    = "data/places.json"
+
+# Maximum number for records to write to the file
+MAX_RECORDS = 300
 
 require "date"
 require "json"
 require "net/http"
 require "uri"
+
+@record_count = 0
 
 def write_one(place, is_last)
 
@@ -70,8 +76,12 @@ def parse_response(response)
     is_last_page = hits.length < PAGE_SIZE
 
     hits.each_with_index do |hit, idx|
-      is_last = is_last_page && (idx == hits.length - 1)
-      write_one(hit["_source"], is_last)
+      is_last = (is_last_page && (idx == hits.length - 1)) || @record_count == MAX_RECORDS - 1
+
+      if @record_count < MAX_RECORDS
+        write_one(hit["_source"], is_last)
+        @record_count += 1
+      end
     end
 
     if not is_last_page
@@ -118,12 +128,14 @@ def run!
   init_file()
   scroll_id = fetch_inital()
 
-  while not scroll_id.to_s.empty? do
+  scrolling_completed = scroll_id.to_s.empty?
+
+  until scrolling_completed || @record_count == MAX_RECORDS do
     scroll_id = fetch_next(scroll_id)
   end
 
   close_file()
-  puts 'Done.'
+  puts "Done. Wrote #{@record_count} records"
 end
 
 run! if __FILE__==$0
