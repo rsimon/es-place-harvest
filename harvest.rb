@@ -5,7 +5,10 @@ PAGE_SIZE   = 200
 OUT_FILE    = "data/places.json"
 
 # Maximum number for records to write to the file
-MAX_RECORDS = 300
+MAX_RECORDS = 1000000
+
+# ElasticSearch REST port number
+ES_PORT = 9700
 
 require "date"
 require "json"
@@ -64,7 +67,7 @@ def write_one(place, is_last)
   add_if_defined(to_year,     :to_year,   record[:properties])
 
   if depictions.length > 0
-    record[:depictions] = depictions.map { |d| d.url }
+    record[:depictions] = depictions.map { |d| d["url"] }
   end
 
   if link_uris
@@ -103,14 +106,14 @@ def parse_response(response)
 end
 
 def fetch_inital
-  uri = URI.parse("http://localhost:9200/peripleo/_search?q=item_type:PLACE&size=#{PAGE_SIZE}&scroll=1m")
+  uri = URI.parse("http://localhost:#{ES_PORT}/peripleo/_search?q=item_type:PLACE&size=#{PAGE_SIZE}&scroll=1m")
   http = Net::HTTP.new(uri.host, uri.port)
   request = Net::HTTP::Get.new(uri.request_uri)
   parse_response(http.request(request))
 end
 
 def fetch_next(id)
-  uri = URI.parse("http://localhost:9200/_search/scroll")
+  uri = URI.parse("http://localhost:#{ES_PORT}/_search/scroll")
   http = Net::HTTP.new(uri.host, uri.port)
   request = Net::HTTP::Post.new(uri.request_uri, 'Content-Type' => 'application/json')
   request.body = "{ \"scroll\" : \"1m\", \"scroll_id\" : \"#{id}\" }"
@@ -138,9 +141,7 @@ def run!
   init_file()
   scroll_id = fetch_inital()
 
-  scrolling_completed = scroll_id.to_s.empty?
-
-  until scrolling_completed || @record_count == MAX_RECORDS do
+  until scroll_id.to_s.empty? || @record_count == MAX_RECORDS do
     scroll_id = fetch_next(scroll_id)
   end
 
