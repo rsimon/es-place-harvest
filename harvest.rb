@@ -20,7 +20,7 @@ def write_one(place, is_last)
     place["is_conflation_of"].flat_map { |r| r[key] }.compact
   end
 
-  def addIfDefined(prop, key, record)
+  def add_if_defined(prop, key, record)
     if not prop == nil
       record[key] = prop
     end
@@ -42,6 +42,9 @@ def write_one(place, is_last)
   from_year    = Date.parse(temp_bounds["from"]).year unless temp_bounds == nil
   to_year      = Date.parse(temp_bounds["to"]).year unless temp_bounds == nil
 
+  links        = flat_map(place, "links")
+  link_uris    = links.map { |l| l["uri"] } if links
+
   record = {
     type: "Feature",
     identifiers: identifiers,
@@ -53,18 +56,20 @@ def write_one(place, is_last)
     title: place["title"]
   }
 
-  addIfDefined(temp_bounds,  :temporal_bounds, record)
-  addIfDefined(names,        :names,           record)
-  addIfDefined(descriptions, :descriptions,    record)
+  add_if_defined(temp_bounds,  :temporal_bounds, record)
+  add_if_defined(names,        :names,           record)
+  add_if_defined(descriptions, :descriptions,    record)
 
-  addIfDefined(from_year,   :from_year, record[:properties])
-  addIfDefined(to_year,     :to_year,   record[:properties])
+  add_if_defined(from_year,   :from_year, record[:properties])
+  add_if_defined(to_year,     :to_year,   record[:properties])
 
   if depictions.length > 0
     record[:depictions] = depictions.map { |d| d.url }
   end
 
-  # TODO external_links
+  if link_uris
+    record[:external_links] = link_uris - identifiers
+  end
 
   if is_last
     open(OUT_FILE, 'a') { |f| f.puts "    #{record.to_json}" }
