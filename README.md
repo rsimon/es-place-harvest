@@ -3,8 +3,6 @@
 A simple Ruby script to harvest all the places from the Peripleo ElasticSearch index, and
 generate a single (big) GeoJSON FeatureCollection.
 
-__Work in progress!__
-
 ## Usage
 
 1. make sure the ElasticSearch index is running
@@ -13,7 +11,7 @@ __Work in progress!__
 
 ## Output Format
 
-The desired output format is a single FeatureCollection with Feature objects such as this
+The output is a single FeatureCollection with Feature objects such as this
 
 ```json
 {
@@ -60,116 +58,5 @@ The desired output format is a single FeatureCollection with Feature objects suc
     "https://en.wikipedia.org/wiki/Warrington",
     "http://www.wikidata.org/entity/Q215733"
   ]
-}
-```
-
-## Example ElasticSearch Record
-
-Just for my own info/reference - the source format in ElasticSearch. (See also
-[this](https://github.com/pelagios/peripleo2/blob/master/conf/es-mappings/01_item.json))
-
-```json
-{  
-   "doc_id":"45ed8835-80b6-4281-adf0-03244eefb441",
-   "item_type":[  
-      "PLACE"
-   ],
-   "title":"Warrington",
-   "representative_geometry":{  
-      "type":"Point",
-      "coordinates":[  
-         -2.58024,
-         53.39254
-      ]
-   },
-   "representative_point":[  
-      -2.58024,
-      53.39254
-   ],
-   "bbox":{  
-      "type":"envelope",
-      "coordinates":[  
-         [  
-            -2.58024,
-            53.39254
-         ],
-         [  
-            -2.58024,
-            53.39254
-         ]
-      ]
-   },
-   "is_conflation_of":[  
-      {  
-         "uri":"http://sws.geonames.org/2634739",
-         "identifiers":[  
-            "http://sws.geonames.org/2634739"
-         ],
-         "last_synced_at":"2017-11-29T12:25:18+00:00",
-         "title":"Warrington",
-         "is_in_dataset":{  
-            "root":"geonames\u0007geonames",
-            "paths":[  
-               "geonames\u0007geonames"
-            ],
-            "ids":[  
-               "geonames"
-            ]
-         },
-         "languages":[  
-            "DE",
-            "EN",
-            "FR",
-            "RU",
-            "ZH"
-         ],
-         "geometry":{  
-            "type":"Point",
-            "coordinates":[  
-               -2.58024,
-               53.39254
-            ]
-         },
-         "representative_point":[  
-            -2.58024,
-            53.39254
-         ],
-         "names":[  
-            {  
-               "name":"Warrington",
-               "language":"DE"
-            },
-            {  
-               "name":"Warrington",
-               "language":"EN"
-            },
-            {  
-               "name":"Warrington",
-               "language":"FR"
-            },
-            {  
-               "name":"Уоррингтон",
-               "language":"RU"
-            }
-         ]
-      }
-   ],
-   "suggest":{  
-      "input":[  
-         "Warrington",
-         "Warrington",
-         "Warrington",
-         "Warrington",
-         "Уоррингтон",
-         "沃灵顿"
-      ],
-      "output":"Warrington",
-      "payload":{  
-         "identifier":"http://sws.geonames.org/2634739",
-         "type":[  
-            "PLACE"
-         ]
-      }
-   }
 }
 ```
