@@ -26,9 +26,14 @@ def write_one(place, is_last)
     end
   end
 
-  # TODO don't write places that are GeoNames only
-
   identifiers  = flat_map(place, "identifiers")
+  is_geonames_only = (identifiers.size == 1) && identifiers.first.include?("geonames.org")
+
+  # By convention, we skip all records that are GeoNames only
+  if is_geonames_only
+    return
+  end
+
   names        = flat_map(place, "names")
   descriptions = flat_map(place, "descriptions")
   depictions   = flat_map(place, "depictions")
@@ -39,13 +44,13 @@ def write_one(place, is_last)
 
   record = {
     type: "Feature",
+    identifiers: identifiers,
     geometry: place["representative_geometry"],
     properties: {
       title: place["title"],
       peripleo_view: "http://peripleo.pelagios.org/ui#selected=#{URI.encode(identifiers.first)}"
     },
-    title: place["title"],
-    identifiers: identifiers
+    title: place["title"]
   }
 
   addIfDefined(temp_bounds,  :temporal_bounds, record)
@@ -66,6 +71,8 @@ def write_one(place, is_last)
   else
     open(OUT_FILE, 'a') { |f| f.puts "    #{record.to_json}," }
   end
+
+  @record_count += 1
 end
 
 def parse_response(response)
@@ -77,10 +84,8 @@ def parse_response(response)
 
     hits.each_with_index do |hit, idx|
       is_last = (is_last_page && (idx == hits.length - 1)) || @record_count == MAX_RECORDS - 1
-
       if @record_count < MAX_RECORDS
         write_one(hit["_source"], is_last)
-        @record_count += 1
       end
     end
 
