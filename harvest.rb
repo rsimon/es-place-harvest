@@ -5,10 +5,10 @@ PAGE_SIZE   = 200
 OUT_FILE    = "data/places.json"
 
 # Maximum number for records to write to the file
-MAX_RECORDS = 30000
+MAX_RECORDS = 10000000
 
 # ElasticSearch REST port number
-ES_PORT = 9200
+ES_PORT = 9700
 
 require "date"
 require "json"
