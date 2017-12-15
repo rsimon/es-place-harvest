@@ -5,10 +5,10 @@ PAGE_SIZE   = 200
 OUT_FILE    = "data/places.json"
 
 # Maximum number for records to write to the file
-MAX_RECORDS = 1000000
+MAX_RECORDS = 30000
 
 # ElasticSearch REST port number
-ES_PORT = 9700
+ES_PORT = 9200
 
 require "date"
 require "json"
@@ -29,11 +29,18 @@ def write_one(place, is_last)
     end
   end
 
+  def get_dare_title(place)
+    dare = place["is_conflation_of"].find { |r| r["uri"].include? "dare.ht.lu.se" }
+    if (dare)
+      dare["title"]
+    end
+  end
+
   identifiers  = flat_map(place, "identifiers")
   is_geonames_only = (identifiers.size == 1) && identifiers.first.include?("geonames.org")
 
-  # By convention, we skip all records that are GeoNames only
-  if is_geonames_only
+  # By convention, we skip all records that are GeoNames only, or have null geometry
+  if is_geonames_only || place["representative_geometry"] == nil
     return
   end
 
@@ -48,12 +55,18 @@ def write_one(place, is_last)
   links        = flat_map(place, "links")
   link_uris    = links.map { |l| l["uri"] } if links
 
+  # Prefer DARE titles.
+  # Simple rule, but should be enough to eliminate all "Untitled" titles from Pleiades
+  # where a DARE equivalent exists
+  dare_title   = get_dare_title(place)
+  title        = (dare_title) ? dare_title : place["title"]
+
   record = {
     type: "Feature",
     identifiers: identifiers,
     geometry: place["representative_geometry"],
     properties: {
-      title: place["title"],
+      title: title,
       peripleo_view: "http://peripleo.pelagios.org/ui#selected=#{URI.encode(identifiers.first)}"
     },
     title: place["title"]
